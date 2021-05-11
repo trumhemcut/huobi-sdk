@@ -1,6 +1,6 @@
 {
   "name": "node-huobi-sdk",
-  "version": "1.0.26",
+  "version": "1.0.27",
   "description": "huobi REST API 和 WebSocket的 封装",
   "main": "lib/index.js",
   "scripts": {
