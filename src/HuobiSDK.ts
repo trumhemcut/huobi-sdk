@@ -128,6 +128,12 @@ export class HuobiSDK extends HuobiSDKBase{
             }
         });
     }
+    getTickers() {
+        const path = `/market/tickers`;
+        return this.request<Record<string, any>[]>(`${path}`, {
+            method: 'GET',
+        });
+    }
     getAccounts() {
         const path = `/v1/account/accounts`;
         return this.auth_get<Record<string, any>[]>(`${path}`);
