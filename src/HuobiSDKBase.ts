@@ -129,6 +129,7 @@ export class HuobiSDKBase extends EventEmitter {
                         return json.data || json;
                     } else {
                         this.errLogger(options.method as string, "-", path, json['err-msg'] || json['err_msg'] || json);
+                        return json;
                     }
                 } catch (error) {
                     this.errLogger(options.method as string, "-", path, "Parse Error", error);
@@ -157,8 +158,9 @@ export class HuobiSDKBase extends EventEmitter {
         return this._request<T>(PATH, {
             method: "GET",
             searchParams: signature("GET", PATH, accessKey, secretKey, params)
-        }).catch(() => {
-            this.url.rest.change()
+        }).catch((error) => {
+            this.url.rest.change();
+            return error;
         });
     }
     auth_post = <T = any>(path: string, data: Record<string, any>) => {
@@ -168,15 +170,16 @@ export class HuobiSDKBase extends EventEmitter {
             method: "POST",
             searchParams: signature("POST", PATH, accessKey, secretKey, data),
             json: data
-        }).catch(() => {
-            this.url.rest.change()
+        }).catch((error) => {
+            this.url.rest.change();
+            return error;
         });;
     }
 
     auth_get_contract = <T = any>(
         path: string,
         params: Record<string, any> = {} as Record<string, any>
-    ) => {
+    ) =>  {
         if (!this.url.contract.get()) {
             return Promise.reject('未设置options.url.contract')
         }
@@ -186,8 +189,9 @@ export class HuobiSDKBase extends EventEmitter {
         return this._request<T>(PATH, {
             method: "GET",
             searchParams: signature("GET", PATH, accessKey, secretKey, params)
-        }).catch(() => {
-            this.url.contract.change()
+        }).catch((error) => {
+            this.url.contract.change();
+            return error;
         });
     }
     auth_post_contract = <T = any>(path: string, data: Record<string, any>) => {
@@ -197,8 +201,9 @@ export class HuobiSDKBase extends EventEmitter {
             method: "POST",
             searchParams: signature("POST", PATH, accessKey, secretKey, data),
             json: data
-        }).catch(() => {
-            this.url.contract.get()
+        }).catch((error) => {
+            this.url.contract.get();
+            return error;
         });
     }
     errLogger = (msg: string, ...arg: any[]) => {
