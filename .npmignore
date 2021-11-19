@@ -5,3 +5,4 @@ test*
 example/
 node_modules/
 .DS_Store
+src/
