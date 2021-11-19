@@ -26,23 +26,23 @@ export interface HuobiSDKBaseOptions {
      */
     httpOptions?: HttpOptions;
     url?: {
-        rest?: string;
+        rest?: string | string[];
         /**
          * 不需要签名
          */
-        market_ws?: string;
+        market_ws?: string | string[];
         /**
          * 需要签名(默认使用V2)
          */
-        account_ws?: string;
+        account_ws?: string | string[];
         /**
          * 合约
          */
-        contract?: string;
+        contract?: string | string[];
         /**
          * 期货行情
          */
-        futures_ws?: string;
+        futures_ws?: string | string[];
     };
     socket?: {
         timeout?: number;
@@ -71,7 +71,13 @@ export class HuobiSDKBase extends EventEmitter {
     static account_ws_status?: 'creating' | 'created'
     static futures_ws_status?: 'creating' | 'created'
     options: Required<HuobiSDKBaseOptions> = {} as Required<HuobiSDKBaseOptions>;
-
+    url: {
+        rest: ReturnType<typeof backupURL>;
+        market_ws: ReturnType<typeof backupURL>;
+        account_ws: ReturnType<typeof backupURL>;
+        contract: ReturnType<typeof backupURL>;
+        futures_ws: ReturnType<typeof backupURL>;
+    }
     constructor(options?: Partial<HuobiSDKBaseOptions>) {
         super();
         if (!options) {
@@ -99,6 +105,13 @@ export class HuobiSDKBase extends EventEmitter {
             },
 
         });
+      
+        for (const urlType in this.options.url) {
+            if (Object.prototype.hasOwnProperty.call(this.options.url, urlType)) {
+                const urls = this.options.url[urlType];
+                this.url[urlType] = backupURL(urls)
+            }
+        }
         if (otherOptions) {
             Object.assign(this.options, otherOptions);
         }
@@ -135,49 +148,57 @@ export class HuobiSDKBase extends EventEmitter {
         path: string,
         params: Record<string, any> = {} as Record<string, any>
     ) => {
-        if (!this.options.url.rest) {
+        if (!this.url.rest.get()) {
             return Promise.reject('未设置options.url.rest')
         }
-        const PATH = `${this.options.url.rest}${path}`;
+        const PATH = `${this.url.rest.get()}${path}`;
         const { accessKey, secretKey } = this.options;
 
         return this._request<T>(PATH, {
             method: "GET",
             searchParams: signature("GET", PATH, accessKey, secretKey, params)
+        }).catch(() => {
+            this.url.rest.change()
         });
     }
     auth_post = <T = any>(path: string, data: Record<string, any>) => {
-        const PATH = `${this.options.url.rest}${path}`;
+        const PATH = `${this.url.rest.get()}${path}`;
         const { accessKey, secretKey } = this.options;
         return this._request<T>(PATH, {
             method: "POST",
             searchParams: signature("POST", PATH, accessKey, secretKey, data),
             json: data
-        });
+        }).catch(() => {
+            this.url.rest.change()
+        });;
     }
 
     auth_get_contract = <T = any>(
         path: string,
         params: Record<string, any> = {} as Record<string, any>
     ) => {
-        if (!this.options.url.contract) {
+        if (!this.url.contract.get()) {
             return Promise.reject('未设置options.url.contract')
         }
-        const PATH = `${this.options.url.contract}${path}`;
+        const PATH = `${this.url.contract.get()}${path}`;
         const { accessKey, secretKey } = this.options;
 
         return this._request<T>(PATH, {
             method: "GET",
             searchParams: signature("GET", PATH, accessKey, secretKey, params)
+        }).catch(() => {
+            this.url.contract.change()
         });
     }
     auth_post_contract = <T = any>(path: string, data: Record<string, any>) => {
-        const PATH = `${this.options.url.contract}${path}`;
+        const PATH = `${this.url.contract.get()}${path}`;
         const { accessKey, secretKey } = this.options;
         return this._request<T>(PATH, {
             method: "POST",
             searchParams: signature("POST", PATH, accessKey, secretKey, data),
             json: data
+        }).catch(() => {
+            this.url.contract.get()
         });
     }
     errLogger = (msg: string, ...arg: any[]) => {
@@ -208,12 +229,12 @@ export class HuobiSDKBase extends EventEmitter {
         }
 
 
-        HuobiSDKBase.market_ws = new Sockett(this.options.url.market_ws as string, {
+        HuobiSDKBase.market_ws = new Sockett(this.url.market_ws.get(), {
             ...this.options.socket
         });
         HuobiSDKBase.market_ws.on('open',  () => {
             this.emit('market_ws.open');
-            this.outLogger(`${this.options.url.market_ws} open`);
+            this.outLogger(`${this.url.market_ws.get()} open`);
         });
         HuobiSDKBase.market_ws.on("message", ev => {
             const text = pako.inflate(ev.data, {
@@ -305,6 +326,7 @@ export class HuobiSDKBase extends EventEmitter {
         HuobiSDKBase.account_ws.on('close', (e) => {
             if (e.code === 1006) {
                 this.outLogger(`account_ws closed:`, 'connect ECONNREFUSED');
+                this.url.account_ws.change();
             }
             else {
                 this.outLogger(`account_ws closed:`, e.reason, ` code ${e.code}`);
@@ -320,12 +342,12 @@ export class HuobiSDKBase extends EventEmitter {
             return HuobiSDKBase.futures_ws;
         }
 
-        HuobiSDKBase.futures_ws = new Sockett(this.options.url.futures_ws as string, {
+        HuobiSDKBase.futures_ws = new Sockett(this.url.futures_ws.get(), {
             ...this.options.socket
         });
         HuobiSDKBase.futures_ws.on('open',  () => {
             this.emit('futures_ws.open');
-            this.outLogger(`${this.options.url.futures_ws} open`);
+            this.outLogger(`${this.url.futures_ws.get()} open`);
         });
         HuobiSDKBase.futures_ws.on("message", ev => {
             if (typeof ev.data !== 'string') {
@@ -348,6 +370,7 @@ export class HuobiSDKBase extends EventEmitter {
         HuobiSDKBase.futures_ws.on('close', (e) => {
             if (e.code === 1006) {
                 this.outLogger(`futures_ws closed:`, 'connect ECONNREFUSED');
+                this.url.futures_ws.change();
             }
             else {
                 this.outLogger(`futures_ws closed:`, e.reason, ` code ${e.code}`);
@@ -371,6 +394,22 @@ export class HuobiSDKBase extends EventEmitter {
                 this.emit('accounts.update', msg.data);
                 break;
             default:return;
+        }
+    }
+}
+
+function backupURL(urls: string[] | string) {
+    let index = 0
+    let urlList = Array.isArray(urls) ? urls : [urls]
+    return {
+        get() {
+            return urlList[index]
+        },
+        change() {
+            index++
+            if (index > urls.length - 1) {
+                index = 0
+            }
         }
     }
 }
