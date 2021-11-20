@@ -248,7 +248,7 @@ export class HuobiSDK extends HuobiSDKBase{
                 ts: number,
                 vol: number }
             ts: number
-        }>(`${this.options.url.contract}${path}`, {
+        }>(`${this.url.contract.get()}${path}`, {
             searchParams: {
                 symbol,
             }
@@ -260,7 +260,7 @@ export class HuobiSDK extends HuobiSDKBase{
      */
     contractMarketHistoryKline(symbol: string, period: Period, size: number) {
         const path = `/market/history/kline`;
-        return this._request<any>(`${this.options.url.contract}${path}`, {
+        return this._request<any>(`${this.url.contract.get()}${path}`, {
             searchParams: {
                 period: symbol,
                 size: period,
@@ -350,7 +350,7 @@ export class HuobiSDK extends HuobiSDKBase{
      */
     contractOpenInterest(symbol: string, contract_type: ContractType) {
         const path = `/api/v1/contract_open_interest`;
-        return this._request<any>(`${this.options.url.contract}${path}`, {
+        return this._request<any>(`${this.url.contract.get()}${path}`, {
             searchParams: {
                 symbol: symbol,
                 contract_type,
@@ -420,7 +420,7 @@ export class HuobiSDK extends HuobiSDKBase{
             WS_REQ_V2.auth(
                 this.options.accessKey,
                 this.options.secretKey,
-                this.options.url.account_ws as string
+                this.url.account_ws.get()
             )
         );
 

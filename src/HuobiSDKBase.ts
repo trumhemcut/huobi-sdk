@@ -142,7 +142,7 @@ export class HuobiSDKBase extends EventEmitter {
         if (!this.options.url.rest) {
             return Promise.reject('未设置options.url.rest')
         }
-        return this._request<T>(`${this.options.url.rest}${path}`, options);
+        return this._request<T>(`${this.url.rest.get()}${path}`, options);
     }
     auth_get = <T = any>(
         path: string,
@@ -302,12 +302,12 @@ export class HuobiSDKBase extends EventEmitter {
             return HuobiSDKBase.account_ws;
         }
 
-        HuobiSDKBase.account_ws = new Sockett(this.options.url.account_ws as string, {
+        HuobiSDKBase.account_ws = new Sockett(this.url.account_ws.get(), {
             ...this.options.socket
         });
         HuobiSDKBase.account_ws.on('open',  () => {
             this.emit('account_ws.open');
-            this.outLogger(`${this.options.url.account_ws} open`);
+            this.outLogger(`${this.url.account_ws.get()} open`);
         });
         HuobiSDKBase.account_ws.on("message", ev => {
             if (typeof ev.data !== 'string') {
