@@ -77,7 +77,7 @@ export class HuobiSDKBase extends EventEmitter {
         account_ws: ReturnType<typeof backupURL>;
         contract: ReturnType<typeof backupURL>;
         futures_ws: ReturnType<typeof backupURL>;
-    }
+    } = {} as any
     constructor(options?: Partial<HuobiSDKBaseOptions>) {
         super();
         if (!options) {
@@ -85,7 +85,7 @@ export class HuobiSDKBase extends EventEmitter {
         }
         this.setOptions(options);
     }
-    setOptions  (options: Partial<HuobiSDKBaseOptions> = {})  {
+    setOptions  = (options: Partial<HuobiSDKBaseOptions> = {}) =>  {
         const {httpOptions, url, socket, ...otherOptions } = options;
 
         Object.assign(this.options, {
@@ -128,11 +128,10 @@ export class HuobiSDKBase extends EventEmitter {
                     if (json.status === "ok") {
                         return json.data || json;
                     } else {
-                        this.errLogger(options.method as string, "-", path, json['err-msg'] || json['err_msg'] || json);
-                        return json;
+                        throw Error(`${json['err-msg'] || json['err_msg'] || json}`);
                     }
                 } catch (error) {
-                    this.errLogger(options.method as string, "-", path, "Parse Error", error);
+                    throw Error(error);
                 }
             })
             .catch(err => {
@@ -173,7 +172,7 @@ export class HuobiSDKBase extends EventEmitter {
         }).catch((error) => {
             this.url.rest.change();
             return error;
-        });;
+        });
     }
 
     auth_get_contract = <T = any>(
@@ -405,7 +404,7 @@ export class HuobiSDKBase extends EventEmitter {
 
 function backupURL(urls: string[] | string) {
     let index = 0
-    let urlList = Array.isArray(urls) ? urls : [urls]
+    const urlList = Array.isArray(urls) ? urls : [urls]
     return {
         get() {
             return urlList[index]
