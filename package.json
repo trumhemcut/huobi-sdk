@@ -19,7 +19,7 @@
   "dependencies": {
     "crypto-js": "^4.0.0",
     "dayjs": "^1.10.3",
-    "events": "^3.2.0",
+    "events": "^3.3.0",
     "got": "^11.8.1",
     "json-bigint": "^1.0.0",
     "pako": "^2.0.3",
